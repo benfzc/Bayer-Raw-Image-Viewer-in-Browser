@@ -14,11 +14,7 @@ A simple web-based tool for viewing and processing packed raw image files.
 
 This viewer supports a specific 10-bit packed raw format where 4 pixels are stored in 5 bytes:
 
-+----------+----------+----------+----------+----------+
-| Byte 1   |  Byte 2  |  Byte 3  |   Byte 4 |  Byte 5  |
-+----------+----------+----------+----------+----------+
-| AAAAAAAA | AABBBBBB | BBBBCCCC | CCCCCCDD | DDDDDDDD |
-+----------+----------+----------+----------+----------+
+![packed_raw](https://github.com/user-attachments/assets/692a0ec8-bbb6-47a6-a260-c5f99512b484)
 
 Where A, B, C, and D represent four consecutive 10-bit pixel values.
 
