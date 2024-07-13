@@ -2,6 +2,8 @@
 
 A simple web-based tool for viewing and processing packed raw image files.
 
+[Use it here!](https://benfzc.github.io/Bayer-Raw-Image-Viewer-in-Browser/)
+
 ## Features
 
 - Support for 10-bit packed raw image format
