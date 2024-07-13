@@ -91,6 +91,26 @@ function drawImage(imageData, width, height) {
     document.getElementById('dropText').style.display = 'none';
 }
 
+function loadSavedValues() {
+    const width = localStorage.getItem('width');
+    const height = localStorage.getItem('height');
+    const stride = localStorage.getItem('stride');
+
+    if (width) document.getElementById('width').value = width;
+    if (height) document.getElementById('height').value = height;
+    if (stride) document.getElementById('stride').value = stride;
+}
+
+function saveValues() {
+    const width = document.getElementById('width').value;
+    const height = document.getElementById('height').value;
+    const stride = document.getElementById('stride').value;
+
+    localStorage.setItem('width', width);
+    localStorage.setItem('height', height);
+    localStorage.setItem('stride', stride);
+}
+
 function loadRawImage(file) {
     const width = parseInt(document.getElementById('width').value);
     const height = parseInt(document.getElementById('height').value);
@@ -101,6 +121,8 @@ function loadRawImage(file) {
         alert('Please enter valid width, height, and stride values');
         return;
     }
+
+    saveValues();
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -138,3 +160,5 @@ fileInput.addEventListener('change', (e) => {
         loadRawImage(e.target.files[0]);
     }
 });
+
+window.addEventListener('load', loadSavedValues);
