@@ -75,8 +75,17 @@ function simpleDemosaic(bayerData, width, height, pattern) {
     return rgbData;
 }
 
-function processRawData(rawData, width, height, stride, pattern) {
-    const unpackedData = unpack10BitData(rawData, width, height, stride);
+function subtractOB(data, obValue) {
+    return data.map(value => Math.max(0, value - obValue));
+}
+
+function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue) {
+    let unpackedData = unpack10BitData(rawData, width, height, stride);
+    
+    if (subtractOBFlag) {
+        unpackedData = subtractOB(unpackedData, obValue);
+    }
+    
     return simpleDemosaic(unpackedData, width, height, pattern);
 }
 
@@ -95,20 +104,35 @@ function loadSavedValues() {
     const width = localStorage.getItem('width');
     const height = localStorage.getItem('height');
     const stride = localStorage.getItem('stride');
+    const subtractOB = localStorage.getItem('subtractOB');
+    const obValue = localStorage.getItem('obValue');
 
     if (width) document.getElementById('width').value = width;
     if (height) document.getElementById('height').value = height;
     if (stride) document.getElementById('stride').value = stride;
+    if (subtractOB) document.getElementById('subtractOB').checked = subtractOB === 'true';
+    if (obValue) document.getElementById('obValueInput').value = obValue;
+
+    toggleOBValueVisibility();
 }
 
 function saveValues() {
     const width = document.getElementById('width').value;
     const height = document.getElementById('height').value;
     const stride = document.getElementById('stride').value;
+    const subtractOB = document.getElementById('subtractOB').checked;
+    const obValue = document.getElementById('obValueInput').value;
 
     localStorage.setItem('width', width);
     localStorage.setItem('height', height);
     localStorage.setItem('stride', stride);
+    localStorage.setItem('subtractOB', subtractOB);
+    localStorage.setItem('obValue', obValue);
+}
+
+function toggleOBValueVisibility() {
+    const subtractOB = document.getElementById('subtractOB').checked;
+    document.getElementById('obValue').style.display = subtractOB ? 'block' : 'none';
 }
 
 function loadRawImage(file) {
@@ -116,9 +140,16 @@ function loadRawImage(file) {
     const height = parseInt(document.getElementById('height').value);
     const stride = parseInt(document.getElementById('stride').value);
     const pattern = document.querySelector('input[name="bayerPattern"]:checked').value;
+    const subtractOBFlag = document.getElementById('subtractOB').checked;
+    const obValue = parseInt(document.getElementById('obValueInput').value);
 
     if (!width || !height || !stride) {
         alert('Please enter valid width, height, and stride values');
+        return;
+    }
+
+    if (subtractOBFlag && (isNaN(obValue) || obValue < 0 || obValue > 1023)) {
+        alert('Please enter a valid OB value (0-1023)');
         return;
     }
 
@@ -127,7 +158,7 @@ function loadRawImage(file) {
     const reader = new FileReader();
     reader.onload = function(e) {
         const rawData = new Uint8Array(e.target.result);
-        const imageData = processRawData(rawData, width, height, stride, pattern);
+        const imageData = processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue);
         drawImage(imageData, width, height);
     };
     reader.readAsArrayBuffer(file);
@@ -160,5 +191,7 @@ fileInput.addEventListener('change', (e) => {
         loadRawImage(e.target.files[0]);
     }
 });
+
+document.getElementById('subtractOB').addEventListener('change', toggleOBValueVisibility);
 
 window.addEventListener('load', loadSavedValues);

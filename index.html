@@ -40,6 +40,10 @@
         #imageCanvas { max-width: 100%; max-height: 100%; display: none; }
         #dropText { text-align: center; color: #ccc; }
         a { color: #4da6ff; }
+        #obValue {
+            display: none;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -68,6 +72,14 @@
         <label for="grbg">GRBG</label>
         <input type="radio" id="gbrg" name="bayerPattern" value="GBRG" checked>
         <label for="gbrg">GBRG</label>
+    </div>
+    <div class="input-group">
+        <input type="checkbox" id="subtractOB">
+        <label for="subtractOB">Subtract Optical Black (OB)</label>
+    </div>
+    <div class="input-group" id="obValue">
+        <label for="obValueInput">OB Value:</label>
+        <input type="number" id="obValueInput" min="0" max="1023" required>
     </div>
     
     <div id="imageArea">
