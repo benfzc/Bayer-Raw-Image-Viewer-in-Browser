@@ -11,6 +11,19 @@
             background-color: #000;
             color: #fff;
         }
+		
+		fieldset {
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			padding: 10px 15px;
+			margin-bottom: 20px;
+		}
+
+		legend {
+			padding: 0 5px;
+			font-weight: bold;
+		}
+		
         input[type="number"] { 
             width: 100px; 
             margin-right: 10px;
@@ -18,12 +31,19 @@
             color: #fff;
             border: 1px solid #555;
         }
+		.input-row {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 20px;
+		}
         .input-group {
             margin-bottom: 10px;
         }
+
         .input-group label {
             margin-right: 10px;
         }
+
         #imageArea {
             border: 2px dashed #555;
             border-radius: 20px;
@@ -57,27 +77,63 @@
             left: 0;
             transform-origin: 0 0;
         }
+
+		.ob-group {
+			display: flex;
+			flex-direction: column;
+		}
+
+		.ob-item {
+			display: flex;
+			align-items: center;
+			margin-bottom: 5px;
+		}
+
+		.ob-item input[type="checkbox"] {
+			margin-right: 10px;
+		}
+
+		.ob-item .placeholder {
+			width: 20px;
+		}
+
+		.ob-item label {
+			margin-right: 10px;
+		}
+
+		#obValue {
+			margin-left: 20px;
+			margin-top: 2px;
+		}
+
+		#obValueInput {
+			width: 100px;
+		}
     </style>
 </head>
 <body>
     <h1>Raw Image Viewer</h1>
     <p><a href="https://github.com/benfzc/Bayer-Raw-Image-Viewer-in-Browser" target="_blank">View project on GitHub</a></p>
 
-	<div class="input-group">
-		<label for="width">Width:</label>
-		<input type="number" id="width" name="width" min="1" required>
-	</div>
+	<fieldset>
+	<legend>Resolution:</legend>
+	<div class="input-row">
+		<div class="input-group">
+			<label for="width">Width:</label>
+			<input type="number" id="width" name="width" min="1" required>
+		</div>
 
-	<div class="input-group">
-		<label for="height">Height:</label>
-		<input type="number" id="height" name="height" min="1" required>
-	</div>
+		<div class="input-group">
+			<label for="height">Height:</label>
+			<input type="number" id="height" name="height" min="1" required>
+		</div>
 
-	<div class="input-group">
-		<label for="stride">Stride (bytes per row):</label>
-		<input type="number" id="stride" name="stride" min="1" required>
+		<div class="input-group">
+			<label for="stride">Stride (bytes per row):</label>
+			<input type="number" id="stride" name="stride" min="1" required>
+		</div>
 	</div>
-
+	</fieldset>
 	<fieldset>
 		<legend>Bayer Pattern:</legend>
 		<label><input type="radio" name="bayerPattern" value="RGGB" required> RGGB</label>
@@ -100,7 +156,9 @@
 		</label>
 	</div>
 
+	<div class="input-group ob-group">
 	<div id="obValue" class="input-group">
+		<div class="placeholder"></div>
 		<label for="obValueInput">OB Value:</label>
 		<input type="number" id="obValueInput" name="obValue" min="0" max="1023">
 	</div>
