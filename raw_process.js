@@ -1,4 +1,9 @@
 let rawDataBuffer = null;
+let currentImageData = null;
+let currentZoom = 1;
+let dragStart = { x: 0, y: 0 };
+let currentPan = { x: 0, y: 0 };
+
 function unpack10BitData(packedData, width, height, stride) {
     const unpacked = new Uint16Array(width * height);
     let outIndex = 0;
@@ -89,6 +94,50 @@ function drawImage(imageData, width, height) {
     ctx.putImageData(imgData, 0, 0);
     canvas.style.display = 'block';
     document.getElementById('dropText').style.display = 'none';
+
+    // Store current image data for zooming
+    currentImageData = imgData;
+    currentZoom = 1;
+    currentPan = { x: 0, y: 0 };
+    updateCanvasTransform();
+}
+
+function updateCanvasTransform() {
+    const canvas = document.getElementById('imageCanvas');
+    canvas.style.transform = `translate(${currentPan.x}px, ${currentPan.y}px) scale(${currentZoom})`;
+}
+
+function zoom(delta, mouseX, mouseY) {
+    const zoomFactor = delta > 0 ? 1.1 : 1 / 1.1;
+    const newZoom = currentZoom * zoomFactor;
+
+    // Limit zoom level between 0.1 and 10
+    if (newZoom >= 0.1 && newZoom <= 10) {
+        // Calculate new pan to zoom towards mouse position
+        const canvasRect = document.getElementById('imageContainer').getBoundingClientRect();
+        const scaleChange = newZoom - currentZoom;
+        currentPan.x -= ((mouseX - canvasRect.left - currentPan.x) / currentZoom) * scaleChange;
+        currentPan.y -= ((mouseY - canvasRect.top - currentPan.y) / currentZoom) * scaleChange;
+
+        currentZoom = newZoom;
+        updateCanvasTransform();
+    }
+}
+
+function startDrag(e) {
+    dragStart = { x: e.clientX - currentPan.x, y: e.clientY - currentPan.y };
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', endDrag);
+}
+
+function drag(e) {
+    currentPan = { x: e.clientX - dragStart.x, y: e.clientY - dragStart.y };
+    updateCanvasTransform();
+}
+
+function endDrag() {
+    document.removeEventListener('mousemove', drag);
+    document.removeEventListener('mouseup', endDrag);
 }
 
 function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue) {
@@ -180,8 +229,6 @@ function loadRawImage(file) {
 const imageArea = document.getElementById('imageArea');
 const fileInput = document.getElementById('fileInput');
 
-imageArea.addEventListener('click', () => fileInput.click());
-
 imageArea.addEventListener('dragover', (e) => {
     e.preventDefault();
     imageArea.classList.add('dragover');
@@ -221,3 +268,12 @@ document.querySelectorAll('input[name="bayerPattern"]').forEach(radio => {
 });
 
 window.addEventListener('load', loadSavedValues);
+
+// Add zoom functionality
+document.getElementById('imageContainer').addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoom(e.deltaY, e.clientX, e.clientY);
+});
+
+// Add pan functionality
+document.getElementById('imageCanvas').addEventListener('mousedown', startDrag);

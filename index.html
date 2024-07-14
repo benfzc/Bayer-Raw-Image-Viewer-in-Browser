@@ -37,12 +37,25 @@
             overflow: hidden;
         }
         #imageArea.dragover { background-color: #333; }
-        #imageCanvas { max-width: 100%; max-height: 100%; display: none; }
         #dropText { text-align: center; color: #ccc; }
         a { color: #4da6ff; }
         #obValue {
             display: none;
             margin-top: 10px;
+        }
+        #imageContainer {
+            overflow: hidden;
+            width: 640px;
+            height: 480px;
+            position: relative;
+        }
+        #imageCanvas {
+            max-width: 100%;
+            max-height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: 0 0;
         }
     </style>
 </head>
@@ -83,7 +96,9 @@
     </div>
     
     <div id="imageArea">
-        <canvas id="imageCanvas"></canvas>
+        <div id="imageContainer">
+            <canvas id="imageCanvas"></canvas>
+        </div>
         <div id="dropText">Drop raw image file here, or click to select file</div>
     </div>
     <input type="file" id="fileInput" style="display: none;">
