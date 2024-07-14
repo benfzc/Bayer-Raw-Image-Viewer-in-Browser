@@ -57,7 +57,7 @@ function simpleDemosaic(bayerData, width, height, pattern) {
             } else {
                 // Green
                 g = bayerData[i];
-                if ((y % 2 === redOffset[1]) !== (x % 2 === redOffset[0])) {
+                if ((y % 2 === redOffset[1])) {
                     r = (x > 0 && x < width - 1) ? (bayerData[i-1] + bayerData[i+1]) / 2 : 
                         (y > 0 && y < height - 1) ? (bayerData[i-width] + bayerData[i+width]) / 2 : bayerData[i];
                     b = (y > 0 && y < height - 1) ? (bayerData[i-width] + bayerData[i+width]) / 2 : 
@@ -83,6 +83,34 @@ function simpleDemosaic(bayerData, width, height, pattern) {
 
 function subtractOB(data, obValue) {
     return data.map(value => Math.max(0, value - obValue));
+}
+
+function applyAWB(rgbData, width, height) {
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    
+    // Calculate average RGB values
+    for (let i = 0; i < rgbData.length; i += 4) {
+        rSum += rgbData[i];
+        gSum += rgbData[i + 1];
+        bSum += rgbData[i + 2];
+        count++;
+    }
+    
+    const rAvg = rSum / count;
+    const gAvg = gSum / count;
+    const bAvg = bSum / count;
+    
+    // Calculate scaling factors
+    const rScale = gAvg / rAvg;
+    const bScale = gAvg / bAvg;
+    
+    // Apply white balance
+    for (let i = 0; i < rgbData.length; i += 4) {
+        rgbData[i] = Math.min(255, rgbData[i] * rScale);
+        rgbData[i + 2] = Math.min(255, rgbData[i + 2] * bScale);
+    }
+    
+    return rgbData;
 }
 
 function drawImage(imageData, width, height) {
@@ -140,14 +168,20 @@ function endDrag() {
     document.removeEventListener('mouseup', endDrag);
 }
 
-function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue) {
+function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag) {
     let unpackedData = unpack10BitData(rawData, width, height, stride);
     
     if (subtractOBFlag) {
         unpackedData = subtractOB(unpackedData, obValue);
     }
     
-    return simpleDemosaic(unpackedData, width, height, pattern);
+    let rgbData = simpleDemosaic(unpackedData, width, height, pattern);
+    
+    if (applyAWBFlag) {
+        rgbData = applyAWB(rgbData, width, height);
+    }
+    
+    return rgbData;
 }
 
 function loadSavedValues() {
@@ -157,6 +191,7 @@ function loadSavedValues() {
     const subtractOB = localStorage.getItem('subtractOB');
     const obValue = localStorage.getItem('obValue');
     const pattern = localStorage.getItem('bayerPattern');
+	const applyAWB = localStorage.getItem('applyAWB');
 
     if (width) document.getElementById('width').value = width;
     if (height) document.getElementById('height').value = height;
@@ -164,6 +199,7 @@ function loadSavedValues() {
     if (subtractOB) document.getElementById('subtractOB').checked = subtractOB === 'true';
     if (obValue) document.getElementById('obValueInput').value = obValue;
     if (pattern) document.querySelector(`input[name="bayerPattern"][value="${pattern}"]`).checked = true;
+	if (applyAWB) document.getElementById('applyAWB').checked = applyAWB === 'true';
 
     toggleOBValueVisibility();
 }
@@ -175,6 +211,7 @@ function saveValues() {
     const subtractOB = document.getElementById('subtractOB').checked;
     const obValue = document.getElementById('obValueInput').value;
     const pattern = document.querySelector('input[name="bayerPattern"]:checked').value;
+	const applyAWB = document.getElementById('applyAWB').checked;
 
     localStorage.setItem('width', width);
     localStorage.setItem('height', height);
@@ -182,6 +219,7 @@ function saveValues() {
     localStorage.setItem('subtractOB', subtractOB);
     localStorage.setItem('obValue', obValue);
     localStorage.setItem('bayerPattern', pattern);
+	localStorage.setItem('applyAWB', applyAWB);
 }
 
 function toggleOBValueVisibility() {
@@ -200,6 +238,7 @@ function reprocessImage() {
     const pattern = document.querySelector('input[name="bayerPattern"]:checked').value;
     const subtractOBFlag = document.getElementById('subtractOB').checked;
     const obValue = parseInt(document.getElementById('obValueInput').value);
+    const applyAWBFlag = document.getElementById('applyAWB').checked;
 
     if (!width || !height || !stride) {
         alert('Please enter valid width, height, and stride values');
@@ -211,9 +250,14 @@ function reprocessImage() {
         return;
     }
 
+    if (applyAWBFlag && !subtractOBFlag) {
+        alert('Subtract OB must be enabled when applying AWB');
+        return;
+    }
+
     saveValues();
 
-    const imageData = processRawData(rawDataBuffer, width, height, stride, pattern, subtractOBFlag, obValue);
+    const imageData = processRawData(rawDataBuffer, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag);
     drawImage(imageData, width, height);
 }
 
@@ -277,3 +321,11 @@ document.getElementById('imageContainer').addEventListener('wheel', (e) => {
 
 // Add pan functionality
 document.getElementById('imageCanvas').addEventListener('mousedown', startDrag);
+
+document.getElementById('applyAWB').addEventListener('change', () => {
+    if (document.getElementById('applyAWB').checked) {
+        document.getElementById('subtractOB').checked = true;
+        toggleOBValueVisibility();
+    }
+    reprocessImage();
+});
