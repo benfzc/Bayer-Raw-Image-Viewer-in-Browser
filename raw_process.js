@@ -1,3 +1,4 @@
+let rawDataBuffer = null;
 function unpack10BitData(packedData, width, height, stride) {
     const unpacked = new Uint16Array(width * height);
     let outIndex = 0;
@@ -79,16 +80,6 @@ function subtractOB(data, obValue) {
     return data.map(value => Math.max(0, value - obValue));
 }
 
-function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue) {
-    let unpackedData = unpack10BitData(rawData, width, height, stride);
-    
-    if (subtractOBFlag) {
-        unpackedData = subtractOB(unpackedData, obValue);
-    }
-    
-    return simpleDemosaic(unpackedData, width, height, pattern);
-}
-
 function drawImage(imageData, width, height) {
     const canvas = document.getElementById('imageCanvas');
     const ctx = canvas.getContext('2d');
@@ -100,18 +91,30 @@ function drawImage(imageData, width, height) {
     document.getElementById('dropText').style.display = 'none';
 }
 
+function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue) {
+    let unpackedData = unpack10BitData(rawData, width, height, stride);
+    
+    if (subtractOBFlag) {
+        unpackedData = subtractOB(unpackedData, obValue);
+    }
+    
+    return simpleDemosaic(unpackedData, width, height, pattern);
+}
+
 function loadSavedValues() {
     const width = localStorage.getItem('width');
     const height = localStorage.getItem('height');
     const stride = localStorage.getItem('stride');
     const subtractOB = localStorage.getItem('subtractOB');
     const obValue = localStorage.getItem('obValue');
+    const pattern = localStorage.getItem('bayerPattern');
 
     if (width) document.getElementById('width').value = width;
     if (height) document.getElementById('height').value = height;
     if (stride) document.getElementById('stride').value = stride;
     if (subtractOB) document.getElementById('subtractOB').checked = subtractOB === 'true';
     if (obValue) document.getElementById('obValueInput').value = obValue;
+    if (pattern) document.querySelector(`input[name="bayerPattern"][value="${pattern}"]`).checked = true;
 
     toggleOBValueVisibility();
 }
@@ -122,12 +125,14 @@ function saveValues() {
     const stride = document.getElementById('stride').value;
     const subtractOB = document.getElementById('subtractOB').checked;
     const obValue = document.getElementById('obValueInput').value;
+    const pattern = document.querySelector('input[name="bayerPattern"]:checked').value;
 
     localStorage.setItem('width', width);
     localStorage.setItem('height', height);
     localStorage.setItem('stride', stride);
     localStorage.setItem('subtractOB', subtractOB);
     localStorage.setItem('obValue', obValue);
+    localStorage.setItem('bayerPattern', pattern);
 }
 
 function toggleOBValueVisibility() {
@@ -135,7 +140,11 @@ function toggleOBValueVisibility() {
     document.getElementById('obValue').style.display = subtractOB ? 'block' : 'none';
 }
 
-function loadRawImage(file) {
+function reprocessImage() {
+    if (!rawDataBuffer) {
+        return;
+    }
+
     const width = parseInt(document.getElementById('width').value);
     const height = parseInt(document.getElementById('height').value);
     const stride = parseInt(document.getElementById('stride').value);
@@ -155,11 +164,15 @@ function loadRawImage(file) {
 
     saveValues();
 
+    const imageData = processRawData(rawDataBuffer, width, height, stride, pattern, subtractOBFlag, obValue);
+    drawImage(imageData, width, height);
+}
+
+function loadRawImage(file) {
     const reader = new FileReader();
     reader.onload = function(e) {
-        const rawData = new Uint8Array(e.target.result);
-        const imageData = processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue);
-        drawImage(imageData, width, height);
+        rawDataBuffer = new Uint8Array(e.target.result);
+        reprocessImage();
     };
     reader.readAsArrayBuffer(file);
 }
@@ -193,5 +206,18 @@ fileInput.addEventListener('change', (e) => {
 });
 
 document.getElementById('subtractOB').addEventListener('change', toggleOBValueVisibility);
+
+document.getElementById('subtractOB').addEventListener('change', () => {
+    toggleOBValueVisibility();
+    reprocessImage();
+});
+
+document.getElementById('width').addEventListener('change', reprocessImage);
+document.getElementById('height').addEventListener('change', reprocessImage);
+document.getElementById('stride').addEventListener('change', reprocessImage);
+document.getElementById('obValueInput').addEventListener('change', reprocessImage);
+document.querySelectorAll('input[name="bayerPattern"]').forEach(radio => {
+    radio.addEventListener('change', reprocessImage);
+});
 
 window.addEventListener('load', loadSavedValues);
