@@ -62,46 +62,51 @@
 <body>
     <h1>Raw Image Viewer</h1>
     <p><a href="https://github.com/benfzc/Bayer-Raw-Image-Viewer-in-Browser" target="_blank">View project on GitHub</a></p>
-    
-    <div class="input-group">
-        <label for="width">Width:</label>
-        <input type="number" id="width" min="1" required>
-    </div>
-    <div class="input-group">
-        <label for="height">Height:</label>
-        <input type="number" id="height" min="1" required>
-    </div>
-    <div class="input-group">
-        <label for="stride">Stride (bytes per row):</label>
-        <input type="number" id="stride" min="1" required>
-    </div>
-    <div class="input-group">
-        <label>Bayer Pattern:</label>
-        <input type="radio" id="rggb" name="bayerPattern" value="RGGB">
-        <label for="rggb">RGGB</label>
-        <input type="radio" id="bggr" name="bayerPattern" value="BGGR">
-        <label for="bggr">BGGR</label>
-        <input type="radio" id="grbg" name="bayerPattern" value="GRBG">
-        <label for="grbg">GRBG</label>
-        <input type="radio" id="gbrg" name="bayerPattern" value="GBRG" checked>
-        <label for="gbrg">GBRG</label>
-    </div>
-    <div class="input-group">
-        <input type="checkbox" id="subtractOB">
-        <label for="subtractOB">Subtract Optical Black (OB)</label>
-    </div>
-    <div class="input-group" id="obValue">
-        <label for="obValueInput">OB Value:</label>
-        <input type="number" id="obValueInput" min="0" max="1023" required>
-    </div>
-    
-    <div id="imageArea">
-        <div id="imageContainer">
-            <canvas id="imageCanvas"></canvas>
-        </div>
-        <div id="dropText">Drop raw image file here, or click to select file</div>
-    </div>
-    <input type="file" id="fileInput" style="display: none;">
+
+	<div class="input-group">
+		<label for="width">Width:</label>
+		<input type="number" id="width" name="width" min="1" required>
+	</div>
+
+	<div class="input-group">
+		<label for="height">Height:</label>
+		<input type="number" id="height" name="height" min="1" required>
+	</div>
+
+	<div class="input-group">
+		<label for="stride">Stride (bytes per row):</label>
+		<input type="number" id="stride" name="stride" min="1" required>
+	</div>
+
+	<fieldset>
+		<legend>Bayer Pattern:</legend>
+		<label><input type="radio" name="bayerPattern" value="RGGB" required> RGGB</label>
+		<label><input type="radio" name="bayerPattern" value="BGGR" required> BGGR</label>
+		<label><input type="radio" name="bayerPattern" value="GRBG" required> GRBG</label>
+		<label><input type="radio" name="bayerPattern" value="GBRG" required> GBRG</label>
+	</fieldset>
+
+	<div class="input-group">
+		<label for="subtractOB">
+			<input type="checkbox" id="subtractOB" name="subtractOB">
+			Subtract Optical Black (OB)
+		</label>
+	</div>
+
+	<div id="obValue" class="input-group">
+		<label for="obValueInput">OB Value:</label>
+		<input type="number" id="obValueInput" name="obValue" min="0" max="1023">
+	</div>
+
+	<div id="imageArea">
+		<div id="imageContainer">
+			<canvas id="imageCanvas" aria-label="Raw image display"></canvas>
+		</div>
+		<div id="dropText">
+			<label for="fileInput">Drop raw image file here, or click to select file</label>
+			<input type="file" id="fileInput" aria-label="Select raw image file">
+		</div>
+	</div>
 
     <script src="raw_process.js"></script>
 </body>
