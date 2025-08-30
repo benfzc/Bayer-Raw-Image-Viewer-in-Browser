@@ -12,13 +12,16 @@ A simple web-based tool for viewing and processing packed raw image files.
 - Drag-and-drop interface for easy file loading
 - In-browser demosaicing and display
 
-## Supported Raw Format
+## Supported Raw Formats
 
 This viewer supports a specific 10-bit packed raw format where 4 pixels are stored in 5 bytes:
 
 ![packed_raw](https://github.com/user-attachments/assets/692a0ec8-bbb6-47a6-a260-c5f99512b484)
 
 Where A, B, C, and D represent four consecutive 10-bit pixel values.
+
+Also supported are raw 8-bit format (e.g. V4L2_PIX_FMT_SRGGB8/RGGB) and 10-bit format where each sample is stored in a
+16-bit little endian zero padded word (e.g. V4L2_PIX_FMT_SRGGB10/RG10).
 
 ## Usage
 

@@ -21,7 +21,17 @@ function unpack10BitData(packedData, width, height, stride) {
     return unpacked;
 }
 
-function simpleDemosaic(bayerData, width, height, pattern) {
+function unpack10BitFrom16(packedData, width, height) {
+    const unpacked = new Uint16Array(width * height);
+
+    for (let i = 0; i < width * height; i++) {
+        unpacked[i] = packedData[i * 2] | (packedData[i * 2 + 1] << 8);
+    }
+
+    return unpacked;
+}
+
+function simpleDemosaic(bayerData, width, height, pattern, format) {
     const rgbData = new Uint8ClampedArray(width * height * 4);
     
     const patternMap = {
@@ -71,10 +81,16 @@ function simpleDemosaic(bayerData, width, height, pattern) {
             }
             
             const outIndex = i * 4;
-            rgbData[outIndex] = r >> 2;     // Convert 10-bit to 8-bit
-            rgbData[outIndex + 1] = g >> 2;
-            rgbData[outIndex + 2] = b >> 2;
+            rgbData[outIndex] = r;
+            rgbData[outIndex + 1] = g;
+            rgbData[outIndex + 2] = b;
             rgbData[outIndex + 3] = 255;    // Alpha channel
+
+            if (format !== 'unpacked8') {
+                rgbData[outIndex] >>= 2;     // Convert 10-bit to 8-bit
+                rgbData[outIndex + 1] >>= 2;
+                rgbData[outIndex + 2] >>= 2;
+            }
         }
     }
     
@@ -168,14 +184,21 @@ function endDrag() {
     document.removeEventListener('mouseup', endDrag);
 }
 
-function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag) {
-    let unpackedData = unpack10BitData(rawData, width, height, stride);
-    
+function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag, format) {
+    let unpackedData = null;
+    if (format === 'packed10') {
+	unpackedData = unpack10BitData(rawData, width, height, stride);
+    } else if (format === 'unpacked10') {
+	unpackedData = unpack10BitFrom16(rawData, width, height);
+    } else if (format === 'unpacked8') {
+	unpackedData = rawData;
+    }
+
     if (subtractOBFlag) {
         unpackedData = subtractOB(unpackedData, obValue);
     }
     
-    let rgbData = simpleDemosaic(unpackedData, width, height, pattern);
+    let rgbData = simpleDemosaic(unpackedData, width, height, pattern, format);
     
     if (applyAWBFlag) {
         rgbData = applyAWB(rgbData, width, height);
@@ -191,6 +214,7 @@ function loadSavedValues() {
     const subtractOB = localStorage.getItem('subtractOB');
     const obValue = localStorage.getItem('obValue');
     const pattern = localStorage.getItem('bayerPattern');
+    const format = localStorage.getItem('bayerFormat');
 	const applyAWB = localStorage.getItem('applyAWB');
 
     if (width) document.getElementById('width').value = width;
@@ -199,6 +223,7 @@ function loadSavedValues() {
     if (subtractOB) document.getElementById('subtractOB').checked = subtractOB === 'true';
     if (obValue) document.getElementById('obValueInput').value = obValue;
     if (pattern) document.querySelector(`input[name="bayerPattern"][value="${pattern}"]`).checked = true;
+    if (format) document.querySelector(`input[name="bayerFormat"][value="${format}"]`).checked = true;
 	if (applyAWB) document.getElementById('applyAWB').checked = applyAWB === 'true';
 
     toggleOBValueVisibility();
@@ -211,6 +236,7 @@ function saveValues() {
     const subtractOB = document.getElementById('subtractOB').checked;
     const obValue = document.getElementById('obValueInput').value;
     const pattern = document.querySelector('input[name="bayerPattern"]:checked').value;
+    const format = document.querySelector('input[name="bayerFormat"]:checked').value;
 	const applyAWB = document.getElementById('applyAWB').checked;
 
     localStorage.setItem('width', width);
@@ -219,6 +245,7 @@ function saveValues() {
     localStorage.setItem('subtractOB', subtractOB);
     localStorage.setItem('obValue', obValue);
     localStorage.setItem('bayerPattern', pattern);
+    localStorage.setItem('bayerFormat', format);
 	localStorage.setItem('applyAWB', applyAWB);
 }
 
@@ -236,12 +263,13 @@ function reprocessImage() {
     const height = parseInt(document.getElementById('height').value);
     const stride = parseInt(document.getElementById('stride').value);
     const pattern = document.querySelector('input[name="bayerPattern"]:checked').value;
+    const format = document.querySelector('input[name="bayerFormat"]:checked').value;
     const subtractOBFlag = document.getElementById('subtractOB').checked;
     const obValue = parseInt(document.getElementById('obValueInput').value);
     const applyAWBFlag = document.getElementById('applyAWB').checked;
 
-    if (!width || !height || !stride) {
-        alert('Please enter valid width, height, and stride values');
+    if (!width || !height || (!stride && format === 'packed10')) {
+        alert('Please enter valid width, height, and stride (for packed format) values');
         return;
     }
 
@@ -257,7 +285,7 @@ function reprocessImage() {
 
     saveValues();
 
-    const imageData = processRawData(rawDataBuffer, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag);
+    const imageData = processRawData(rawDataBuffer, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag, format);
     drawImage(imageData, width, height);
 }
 
@@ -308,6 +336,9 @@ document.getElementById('height').addEventListener('change', reprocessImage);
 document.getElementById('stride').addEventListener('change', reprocessImage);
 document.getElementById('obValueInput').addEventListener('change', reprocessImage);
 document.querySelectorAll('input[name="bayerPattern"]').forEach(radio => {
+    radio.addEventListener('change', reprocessImage);
+});
+document.querySelectorAll('input[name="bayerFormat"]').forEach(radio => {
     radio.addEventListener('change', reprocessImage);
 });
 
