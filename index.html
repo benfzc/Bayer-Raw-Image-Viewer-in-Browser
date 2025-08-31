@@ -141,6 +141,12 @@
 		<label><input type="radio" name="bayerPattern" value="GRBG" required> GRBG</label>
 		<label><input type="radio" name="bayerPattern" value="GBRG" required> GBRG</label>
 	</fieldset>
+	<fieldset>
+		<legend>Bayer format:</legend>
+		<label><input type="radio" name="bayerFormat" value="packed10" required> 10-bit packed raw</label>
+		<label><input type="radio" name="bayerFormat" value="unpacked8" required> 8-bit raw (PIX_FMT_Sxxxx8)</label>
+		<label><input type="radio" name="bayerFormat" value="unpacked10" required> 10-bit raw in 16-bit word (PIX_FMT_Sxxxx10)</label>
+	</fieldset>
 
 	<div class="input-group">
 		<label for="applyAWB">
