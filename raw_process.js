@@ -81,16 +81,17 @@ function simpleDemosaic(bayerData, width, height, pattern, format) {
             }
             
             const outIndex = i * 4;
-            rgbData[outIndex] = r;
-            rgbData[outIndex + 1] = g;
-            rgbData[outIndex + 2] = b;
-            rgbData[outIndex + 3] = 255;    // Alpha channel
-
-            if (format !== 'unpacked8') {
-                rgbData[outIndex] >>= 2;     // Convert 10-bit to 8-bit
-                rgbData[outIndex + 1] >>= 2;
-                rgbData[outIndex + 2] >>= 2;
+            if (format === 'unpacked10' || format === 'packed10') {
+                rgbData[outIndex] = r >> 2;     // Convert 10-bit to 8-bit
+                rgbData[outIndex + 1] = g >> 2;
+                rgbData[outIndex + 2] = b >> 2;
             }
+            else {
+                rgbData[outIndex] = r;
+                rgbData[outIndex + 1] = g;
+                rgbData[outIndex + 2] = b;
+            }
+            rgbData[outIndex + 3] = 255;    // Alpha channel
         }
     }
     
