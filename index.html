@@ -136,7 +136,7 @@
 	</fieldset>
 	<fieldset>
 		<legend>Bayer Pattern:</legend>
-		<label><input type="radio" name="bayerPattern" value="RGGB" required> RGGB</label>
+		<label><input type="radio" name="bayerPattern" value="RGGB" required checked> RGGB</label>
 		<label><input type="radio" name="bayerPattern" value="BGGR" required> BGGR</label>
 		<label><input type="radio" name="bayerPattern" value="GRBG" required> GRBG</label>
 		<label><input type="radio" name="bayerPattern" value="GBRG" required> GBRG</label>
@@ -145,7 +145,10 @@
 		<legend>Bayer format:</legend>
 		<label><input type="radio" name="bayerFormat" value="packed10" required> 10-bit packed raw</label>
 		<label><input type="radio" name="bayerFormat" value="unpacked8" required> 8-bit raw (PIX_FMT_Sxxxx8)</label>
-		<label><input type="radio" name="bayerFormat" value="unpacked10" required> 10-bit raw in 16-bit word (PIX_FMT_Sxxxx10)</label>
+		<label><input type="radio" name="bayerFormat" value="unpacked10" required checked> 10-bit raw in 16-bit word (PIX_FMT_Sxxxx10)</label>
+		<label><input type="radio" name="bayerFormat" value="unpacked12" required> 12-bit raw in 16-bit word (PIX_FMT_Sxxxx12)</label>
+		<label><input type="radio" name="bayerFormat" value="unpacked14" required> 14-bit raw in 16-bit word (PIX_FMT_Sxxxx14)</label>
+		<label><input type="radio" name="bayerFormat" value="unpacked16" required> 16-bit raw (PIX_FMT_Sxxxx16)</label>
 	</fieldset>
 
 	<div class="input-group">
@@ -166,7 +169,7 @@
 	<div id="obValue" class="input-group">
 		<div class="placeholder"></div>
 		<label for="obValueInput">OB Value:</label>
-		<input type="number" id="obValueInput" name="obValue" min="0" max="1023">
+		<input type="number" id="obValueInput" name="obValue" min="0" max="1023" value="0">
 	</div>
 
 	<div id="imageArea">

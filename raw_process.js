@@ -21,7 +21,9 @@ function unpack10BitData(packedData, width, height, stride) {
     return unpacked;
 }
 
-function unpack10BitFrom16(packedData, width, height) {
+// Convert byte array to Uint16Array (little-endian)
+// Used for 10-bit, 12-bit, and 14-bit formats stored in 16-bit words
+function bytesToUint16Array(packedData, width, height) {
     const unpacked = new Uint16Array(width * height);
 
     for (let i = 0; i < width * height; i++) {
@@ -85,6 +87,21 @@ function simpleDemosaic(bayerData, width, height, pattern, format) {
                 rgbData[outIndex] = r >> 2;     // Convert 10-bit to 8-bit
                 rgbData[outIndex + 1] = g >> 2;
                 rgbData[outIndex + 2] = b >> 2;
+            }
+            else if (format === 'unpacked12' || format === 'packed12') {
+                rgbData[outIndex] = r >> 4;     // Convert 12-bit to 8-bit
+                rgbData[outIndex + 1] = g >> 4;
+                rgbData[outIndex + 2] = b >> 4;
+            }
+            else if (format === 'unpacked14' || format === 'packed14') {
+                rgbData[outIndex] = r >> 6;     // Convert 14-bit to 8-bit
+                rgbData[outIndex + 1] = g >> 6;
+                rgbData[outIndex + 2] = b >> 6;
+            }
+            else if (format === 'unpacked16') {
+                rgbData[outIndex] = r >> 8;     // Convert 16-bit to 8-bit
+                rgbData[outIndex + 1] = g >> 8;
+                rgbData[outIndex + 2] = b >> 8;
             }
             else {
                 rgbData[outIndex] = r;
@@ -189,8 +206,8 @@ function processRawData(rawData, width, height, stride, pattern, subtractOBFlag,
     let unpackedData = null;
     if (format === 'packed10') {
 	unpackedData = unpack10BitData(rawData, width, height, stride);
-    } else if (format === 'unpacked10') {
-	unpackedData = unpack10BitFrom16(rawData, width, height);
+    } else if (format === 'unpacked10' || format === 'unpacked12' || format === 'unpacked14' || format === 'unpacked16') {
+	unpackedData = bytesToUint16Array(rawData, width, height);
     } else if (format === 'unpacked8') {
 	unpackedData = rawData;
     }
@@ -222,7 +239,7 @@ function loadSavedValues() {
     if (height) document.getElementById('height').value = height;
     if (stride) document.getElementById('stride').value = stride;
     if (subtractOB) document.getElementById('subtractOB').checked = subtractOB === 'true';
-    if (obValue) document.getElementById('obValueInput').value = obValue;
+    document.getElementById('obValueInput').value = obValue || '0';
     if (pattern) document.querySelector(`input[name="bayerPattern"][value="${pattern}"]`).checked = true;
     if (format) document.querySelector(`input[name="bayerFormat"][value="${format}"]`).checked = true;
 	if (applyAWB) document.getElementById('applyAWB').checked = applyAWB === 'true';
@@ -274,8 +291,20 @@ function reprocessImage() {
         return;
     }
 
-    if (subtractOBFlag && (isNaN(obValue) || obValue < 0 || obValue > 1023)) {
-        alert('Please enter a valid OB value (0-1023)');
+    // Validate OB value based on bit depth
+    let maxOBValue = 1023; // Default for 10-bit
+    if (format === 'unpacked12') {
+        maxOBValue = 4095; // 12-bit
+    } else if (format === 'unpacked14') {
+        maxOBValue = 16383; // 14-bit
+    } else if (format === 'unpacked16') {
+        maxOBValue = 65535; // 16-bit
+    } else if (format === 'unpacked8') {
+        maxOBValue = 255; // 8-bit
+    }
+
+    if (subtractOBFlag && (isNaN(obValue) || obValue < 0 || obValue > maxOBValue)) {
+        alert(`Please enter a valid OB value (0-${maxOBValue})`);
         return;
     }
 
