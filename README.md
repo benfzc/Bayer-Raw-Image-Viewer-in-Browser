@@ -1,35 +1,49 @@
 # Raw Image Viewer
 
-A simple web-based tool for viewing and processing packed raw image files.
+A simple web-based tool for viewing and processing raw Bayer image files in various formats.
 
 [Use it here!](https://benfzc.github.io/Bayer-Raw-Image-Viewer-in-Browser/)
 
 ## Features
 
-- Support for 10-bit packed raw image format
+- Support for multiple bit-depth raw formats (8/10/12/14/16-bit)
+- Packed and unpacked format support
 - Customizable image dimensions and stride
 - Multiple Bayer pattern options (RGGB, BGGR, GRBG, GBRG)
+- Simple Optical Black (OB) subtraction and Auto White Balance (AWB)
+- Image zoom and pan controls
 - Drag-and-drop interface for easy file loading
 - In-browser demosaicing and display
 
 ## Supported Raw Formats
 
-This viewer supports a specific 10-bit packed raw format where 4 pixels are stored in 5 bytes:
+### Packed Format
+- **10-bit packed**: 4 pixels stored in 5 bytes
 
 ![packed_raw](https://github.com/user-attachments/assets/692a0ec8-bbb6-47a6-a260-c5f99512b484)
 
 Where A, B, C, and D represent four consecutive 10-bit pixel values.
 
-Also supported are raw 8-bit format (e.g. V4L2_PIX_FMT_SRGGB8/RGGB) and 10-bit format where each sample is stored in a
-16-bit little endian zero padded word (e.g. V4L2_PIX_FMT_SRGGB10/RG10).
+### Unpacked Formats
+
+Each pixel is stored in 16-bit words (little-endian byte order), with unused high bits set to zero, except for 8-bit format which uses one byte per pixel.
+
+![unpacked_raw](https://github.com/user-attachments/assets/7661830a-10be-43a0-885b-bfeab5ba8895)
+
+- **8-bit**: PIX_FMT_Sxxxx8
+- **10-bit**: PIX_FMT_Sxxxx10 (16-bit words, little-endian)
+- **12-bit**: PIX_FMT_Sxxxx12 (16-bit words, little-endian)
+- **14-bit**: PIX_FMT_Sxxxx14 (16-bit words, little-endian)
+- **16-bit**: PIX_FMT_Sxxxx16 (16-bit words, little-endian)
 
 ## Usage
 
 1. Open the HTML file in a web browser
 2. Enter the image width, height, and stride (bytes per row)
-3. Select the appropriate Bayer pattern
-4. Drag and drop your raw image file onto the designated area or click to select a file
-5. The processed image will be displayed in the viewer
+3. Select the Bayer pattern and format
+4. (Optional) Enable OB subtraction and/or AWB
+5. Drag and drop your raw image file or click to select
+6. Use mouse wheel to zoom, click and drag to pan
 
 ## Note
 
