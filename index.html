@@ -31,6 +31,10 @@
             color: #fff;
             border: 1px solid #555;
         }
+        input[type="number"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 		.input-row {
 			display: flex;
 			flex-wrap: wrap;
@@ -148,6 +152,15 @@
 		<div class="input-group">
 			<label for="stride">Stride (bytes per row):</label>
 			<input type="number" id="stride" name="stride" min="1" value="1280" required>
+			<label style="margin-left: 10px;">
+				<input type="checkbox" id="autoStride" name="autoStride" checked>
+				Auto
+			</label>
+		</div>
+
+		<div class="input-group">
+			<label for="offset">First byte offset:</label>
+			<input type="number" id="offset" name="offset" min="0" value="0">
 		</div>
 	</div>
 	</fieldset>
@@ -161,11 +174,18 @@
 	<fieldset>
 		<legend>Bayer format:</legend>
 		<label><input type="radio" name="bayerFormat" value="packed10" required> 10-bit packed raw</label>
+		<label><input type="radio" name="bayerFormat" value="packed12" required> 12-bit packed raw</label>
 		<label><input type="radio" name="bayerFormat" value="unpacked8" required> 8-bit raw (PIX_FMT_Sxxxx8)</label>
 		<label><input type="radio" name="bayerFormat" value="unpacked10" required checked> 10-bit raw in 16-bit word (PIX_FMT_Sxxxx10)</label>
 		<label><input type="radio" name="bayerFormat" value="unpacked12" required> 12-bit raw in 16-bit word (PIX_FMT_Sxxxx12)</label>
 		<label><input type="radio" name="bayerFormat" value="unpacked14" required> 14-bit raw in 16-bit word (PIX_FMT_Sxxxx14)</label>
 		<label><input type="radio" name="bayerFormat" value="unpacked16" required> 16-bit raw (PIX_FMT_Sxxxx16)</label>
+		<div id="packed12Options" style="display: none; margin-top: 8px; margin-left: 20px; padding: 8px; border-left: 2px solid #555;">
+			<strong>12-bit packing order:</strong><br>
+			<label title="[P0_lo] [P1_lo] [P1_hi<<4 | P0_hi]"><input type="radio" name="packed12Mode" value="mipi" checked> MIPI CSI-2 (low bytes first, high nibbles combined)</label><br>
+			<label title="[P0_hi] [P0_lo<<4 | P1_hi] [P1_lo]"><input type="radio" name="packed12Mode" value="highfirst"> High-first (MSB first, P0P1 sequential)</label><br>
+			<label title="[P0_lo] [P0_hi | P1_lo<<4] [P1_hi]"><input type="radio" name="packed12Mode" value="lowfirst"> Low-first (LSB first, P0P1 sequential)</label>
+		</div>
 	</fieldset>
 
 	<div class="input-group">
@@ -198,6 +218,7 @@
 			<input type="file" id="fileInput" aria-label="Select raw image file">
 		</div>
 	</div>
+	<div id="fileInfo" style="color: #999; margin-top: 5px; font-size: 0.9em;"></div>
 
     <script src="raw_process.js"></script>
 </body>
