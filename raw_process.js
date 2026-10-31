@@ -35,6 +35,11 @@ function unpack12BitData(packedData, width, height, stride, packMode) {
             const b2 = packedData[i + 2];
 
             switch (packMode) {
+                case 'mipi':
+                    // MIPI CSI-2 RAW12: [P0(11:4)] [P1(11:4)] [P1(3:0)<<4 | P0(3:0)]
+                    unpacked[outIndex++] = (b0 << 4) | (b2 & 0x0f);
+                    unpacked[outIndex++] = (b1 << 4) | (b2 >> 4);
+                    break;
                 case 'lowbytes_hinibble':
                     // Low bytes first, high nibbles in 3rd byte: [P0_lo(7:0)] [P1_lo(7:0)] [P1_hi(11:8)<<4 | P0_hi(11:8)]
                     unpacked[outIndex++] = b0 | ((b2 & 0x0f) << 8);
@@ -415,7 +420,7 @@ function reprocessImage() {
 
     const rawData = offset > 0 ? rawDataBuffer.subarray(offset) : rawDataBuffer;
     const packModeEl = document.querySelector('input[name="packed12Mode"]:checked');
-    const packMode = packModeEl ? packModeEl.value : 'lowbytes_hinibble';
+    const packMode = packModeEl ? packModeEl.value : 'mipi';
     const imageData = processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag, format, packMode);
     drawImage(imageData, width, height);
 }

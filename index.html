@@ -182,7 +182,8 @@
 		<label><input type="radio" name="bayerFormat" value="unpacked16" required> 16-bit raw (PIX_FMT_Sxxxx16)</label>
 		<div id="packed12Options" style="display: none; margin-top: 8px; margin-left: 20px; padding: 8px; border-left: 2px solid #555;">
 			<strong>12-bit packing order:</strong><br>
-			<label title="[P0_lo] [P1_lo] [P1_hi<<4 | P0_hi]"><input type="radio" name="packed12Mode" value="lowbytes_hinibble" checked> Low bytes first, high nibbles in 3rd byte</label><br>
+			<label title="[P0_hi] [P1_hi] [P1_lo<<4 | P0_lo]"><input type="radio" name="packed12Mode" value="mipi" checked> MIPI CSI-2 (high bytes first, low nibbles in 3rd byte)</label><br>
+			<label title="[P0_lo] [P1_lo] [P1_hi<<4 | P0_hi]"><input type="radio" name="packed12Mode" value="lowbytes_hinibble"> Low bytes first, high nibbles in 3rd byte</label><br>
 			<label title="[P0_hi] [P0_lo<<4 | P1_hi] [P1_lo]"><input type="radio" name="packed12Mode" value="highfirst"> High-first (MSB first, P0P1 sequential)</label><br>
 			<label title="[P0_lo] [P0_hi | P1_lo<<4] [P1_hi]"><input type="radio" name="packed12Mode" value="lowfirst"> Low-first (LSB first, P0P1 sequential)</label>
 		</div>
