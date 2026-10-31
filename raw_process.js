@@ -21,6 +21,42 @@ function unpack10BitData(packedData, width, height, stride) {
     return unpacked;
 }
 
+// Unpack 12-bit packed data: 2 pixels per 3 bytes
+// Mode determines the bit layout within the 3 bytes
+function unpack12BitData(packedData, width, height, stride, packMode) {
+    const unpacked = new Uint16Array(width * height);
+    let outIndex = 0;
+
+    for (let row = 0; row < height; row++) {
+        for (let col = 0; col < width; col += 2) {
+            const i = row * stride + Math.floor(col * 1.5);
+            const b0 = packedData[i];
+            const b1 = packedData[i + 1];
+            const b2 = packedData[i + 2];
+
+            switch (packMode) {
+                case 'mipi':
+                    // MIPI CSI-2: [P0_lo(7:0)] [P1_lo(7:0)] [P1_hi(11:8)<<4 | P0_hi(11:8)]
+                    unpacked[outIndex++] = b0 | ((b2 & 0x0f) << 8);
+                    unpacked[outIndex++] = b1 | ((b2 & 0xf0) << 4);
+                    break;
+                case 'highfirst':
+                    // High-first: [P0(11:4)] [P0(3:0)<<4 | P1(11:8)] [P1(7:0)]
+                    unpacked[outIndex++] = (b0 << 4) | (b1 >> 4);
+                    unpacked[outIndex++] = ((b1 & 0x0f) << 8) | b2;
+                    break;
+                case 'lowfirst':
+                    // Low-first: [P0(7:0)] [P0(11:8) | P1(3:0)<<4] [P1(11:4)]
+                    unpacked[outIndex++] = b0 | ((b1 & 0x0f) << 8);
+                    unpacked[outIndex++] = (b1 >> 4) | (b2 << 4);
+                    break;
+            }
+        }
+    }
+
+    return unpacked;
+}
+
 // Convert byte array to Uint16Array (little-endian)
 // Used for 10-bit, 12-bit, and 14-bit formats stored in 16-bit words
 function bytesToUint16Array(packedData, width, height) {
@@ -202,10 +238,12 @@ function endDrag() {
     document.removeEventListener('mouseup', endDrag);
 }
 
-function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag, format) {
+function processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag, format, packMode) {
     let unpackedData = null;
     if (format === 'packed10') {
 	unpackedData = unpack10BitData(rawData, width, height, stride);
+    } else if (format === 'packed12') {
+	unpackedData = unpack12BitData(rawData, width, height, stride, packMode);
     } else if (format === 'unpacked10' || format === 'unpacked12' || format === 'unpacked14' || format === 'unpacked16') {
 	unpackedData = bytesToUint16Array(rawData, width, height);
     } else if (format === 'unpacked8') {
@@ -238,11 +276,23 @@ function loadSavedValues() {
     if (width) document.getElementById('width').value = width;
     if (height) document.getElementById('height').value = height;
     if (stride) document.getElementById('stride').value = stride;
+    const offset = localStorage.getItem('offset');
+    if (offset) document.getElementById('offset').value = offset;
     if (subtractOB) document.getElementById('subtractOB').checked = subtractOB === 'true';
     document.getElementById('obValueInput').value = obValue || '0';
     if (pattern) document.querySelector(`input[name="bayerPattern"][value="${pattern}"]`).checked = true;
     if (format) document.querySelector(`input[name="bayerFormat"][value="${format}"]`).checked = true;
 	if (applyAWB) document.getElementById('applyAWB').checked = applyAWB === 'true';
+    const packMode = localStorage.getItem('packed12Mode');
+    if (packMode) {
+        const el = document.querySelector(`input[name="packed12Mode"][value="${packMode}"]`);
+        if (el) el.checked = true;
+    }
+    togglePacked12Options();
+
+    const autoStride = localStorage.getItem('autoStride');
+    if (autoStride !== null) document.getElementById('autoStride').checked = autoStride === 'true';
+    toggleAutoStride();
 
     toggleOBValueVisibility();
 }
@@ -260,16 +310,63 @@ function saveValues() {
     localStorage.setItem('width', width);
     localStorage.setItem('height', height);
     localStorage.setItem('stride', stride);
+    localStorage.setItem('offset', document.getElementById('offset').value);
     localStorage.setItem('subtractOB', subtractOB);
     localStorage.setItem('obValue', obValue);
     localStorage.setItem('bayerPattern', pattern);
     localStorage.setItem('bayerFormat', format);
 	localStorage.setItem('applyAWB', applyAWB);
+	localStorage.setItem('autoStride', document.getElementById('autoStride').checked);
+    const packModeEl = document.querySelector('input[name="packed12Mode"]:checked');
+    if (packModeEl) localStorage.setItem('packed12Mode', packModeEl.value);
 }
 
 function toggleOBValueVisibility() {
     const subtractOB = document.getElementById('subtractOB').checked;
     document.getElementById('obValue').style.display = subtractOB ? 'block' : 'none';
+}
+
+function togglePacked12Options() {
+    const format = document.querySelector('input[name="bayerFormat"]:checked').value;
+    document.getElementById('packed12Options').style.display = format === 'packed12' ? 'block' : 'none';
+}
+
+function calculateStride(width, format) {
+    switch (format) {
+        case 'packed10':
+            // 4 pixels per 5 bytes
+            return Math.ceil(width / 4) * 5;
+        case 'packed12':
+            // 2 pixels per 3 bytes
+            return Math.ceil(width / 2) * 3;
+        case 'unpacked8':
+            return width;
+        case 'unpacked10':
+        case 'unpacked12':
+        case 'unpacked14':
+        case 'unpacked16':
+            return width * 2;
+        default:
+            return width;
+    }
+}
+
+function updateAutoStride() {
+    if (!document.getElementById('autoStride').checked) return;
+    const width = parseInt(document.getElementById('width').value);
+    const format = document.querySelector('input[name="bayerFormat"]:checked').value;
+    if (width > 0) {
+        document.getElementById('stride').value = calculateStride(width, format);
+    }
+}
+
+function toggleAutoStride() {
+    const auto = document.getElementById('autoStride').checked;
+    document.getElementById('stride').disabled = auto;
+    if (auto) {
+        updateAutoStride();
+        reprocessImage();
+    }
 }
 
 function reprocessImage() {
@@ -285,15 +382,16 @@ function reprocessImage() {
     const subtractOBFlag = document.getElementById('subtractOB').checked;
     const obValue = parseInt(document.getElementById('obValueInput').value);
     const applyAWBFlag = document.getElementById('applyAWB').checked;
+    const offset = parseInt(document.getElementById('offset').value) || 0;
 
-    if (!width || !height || (!stride && format === 'packed10')) {
+    if (!width || !height || (!stride && (format === 'packed10' || format === 'packed12'))) {
         alert('Please enter valid width, height, and stride (for packed format) values');
         return;
     }
 
     // Validate OB value based on bit depth
     let maxOBValue = 1023; // Default for 10-bit
-    if (format === 'unpacked12') {
+    if (format === 'unpacked12' || format === 'packed12') {
         maxOBValue = 4095; // 12-bit
     } else if (format === 'unpacked14') {
         maxOBValue = 16383; // 14-bit
@@ -315,7 +413,10 @@ function reprocessImage() {
 
     saveValues();
 
-    const imageData = processRawData(rawDataBuffer, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag, format);
+    const rawData = offset > 0 ? rawDataBuffer.subarray(offset) : rawDataBuffer;
+    const packModeEl = document.querySelector('input[name="packed12Mode"]:checked');
+    const packMode = packModeEl ? packModeEl.value : 'mipi';
+    const imageData = processRawData(rawData, width, height, stride, pattern, subtractOBFlag, obValue, applyAWBFlag, format, packMode);
     drawImage(imageData, width, height);
 }
 
@@ -323,6 +424,8 @@ function loadRawImage(file) {
     const reader = new FileReader();
     reader.onload = function(e) {
         rawDataBuffer = new Uint8Array(e.target.result);
+        document.getElementById('fileInfo').textContent =
+            `File: ${file.name} | Size: ${rawDataBuffer.length} bytes (${(rawDataBuffer.length / 1024).toFixed(1)} KB)`;
         reprocessImage();
     };
     reader.readAsArrayBuffer(file);
@@ -361,14 +464,26 @@ document.getElementById('subtractOB').addEventListener('change', () => {
     reprocessImage();
 });
 
-document.getElementById('width').addEventListener('change', reprocessImage);
+document.getElementById('width').addEventListener('change', () => {
+    updateAutoStride();
+    reprocessImage();
+});
 document.getElementById('height').addEventListener('change', reprocessImage);
 document.getElementById('stride').addEventListener('change', reprocessImage);
+document.getElementById('offset').addEventListener('change', reprocessImage);
 document.getElementById('obValueInput').addEventListener('change', reprocessImage);
+document.getElementById('autoStride').addEventListener('change', toggleAutoStride);
 document.querySelectorAll('input[name="bayerPattern"]').forEach(radio => {
     radio.addEventListener('change', reprocessImage);
 });
 document.querySelectorAll('input[name="bayerFormat"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        updateAutoStride();
+        togglePacked12Options();
+        reprocessImage();
+    });
+});
+document.querySelectorAll('input[name="packed12Mode"]').forEach(radio => {
     radio.addEventListener('change', reprocessImage);
 });
 
